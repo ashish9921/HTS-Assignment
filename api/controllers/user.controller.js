@@ -20,6 +20,31 @@ const generateAccessAndRefereshToken=async(userId)=>{
     }
 }
 
+var emailRegex = /^[-!#$%&'*+\/0-9=?A-Z^_a-z{|}~](\.?[-!#$%&'*+\/0-9=?A-Z^_a-z`{|}~])*@[a-zA-Z0-9](-*\.?[a-zA-Z0-9])*\.[a-zA-Z](-?[a-zA-Z0-9])+$/;
+// just normal email validater function
+function isEmailValid(email) {
+    if (!email)
+        return false;
+
+    if(email.length>254)
+        return false;
+
+    var valid = emailRegex.test(email);
+    if(!valid)
+        return false;
+
+    // Further checking of some things regex can't handle
+    var parts = email.split("@");
+    if(parts[0].length>64)
+        return false;
+
+    var domainParts = parts[1].split(".");
+    if(domainParts.some(function(part) { return part.length>63; }))
+        return false;
+
+    return true;
+}
+
 const registerUser=asynchandeller(async (req,res)=>{
 //details which requird take from frontend and body
 const {First_Name,Last_Name,email,password}=req.body
@@ -27,6 +52,10 @@ const {First_Name,Last_Name,email,password}=req.body
 //validate -not empty
 if([First_Name,Last_Name,email,password].some((field)=>field?.trim()==="")){
     throw new ApiError(400,"All fields are required")
+}
+var validateEmail=isEmailValid(email)
+if(!validateEmail){
+    throw new ApiError(409, "plese enter valide email address")
 }
 const existUser=await User.findOne({
   email
@@ -57,6 +86,10 @@ const loginuser=asynchandeller(async(req,res)=>{
 
     if( !email){
         throw new ApiError(400 ,"user or email is requred")
+    }
+    var validateEmail=isEmailValid(email)
+    if(!validateEmail){
+        throw new ApiError(409, "plese enter valide email address")
     }
 // find user
     const user=await User.findOne({
